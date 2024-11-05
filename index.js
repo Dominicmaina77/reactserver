@@ -23,7 +23,7 @@ app.listen(port, (req, res)  =>{
 
 app.get('/', (req, res)=>{
     res.send('Server Online!')
-    console.log("tried loading homapage")
+    console.log("tried loading homepage")
 })
 
 // db connection
@@ -34,4 +34,4 @@ mongoose.connect(dbconnection, { useNewUrlParser: true, useUnifiedTopology: true
 
 const userroute = require('./route/userRoutes')
 
-app.use('/api/user', userroute)
+app.use('/api/users', userroute)
