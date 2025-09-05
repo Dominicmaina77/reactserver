@@ -2,9 +2,52 @@ const mongoose = require("mongoose");
 const express = require("express");
 const User = require("../models/UserModel");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+
+if (process.env.Node_ENV !== "production") {
+  require("dotenv").config({
+    path: "./.env",
+  });
+}
+
+const jsonwebtoken = process.env.JWT_SECRET;
+
+const html = `
+<h1>Email Testing by nodemailer</h1>
+<p>Nodemailer is the best</p>
+
+`;
+
+const sendVerificationEmail = async (req,res) =>{
+  try {
+    const transporter = nodeMailer.createTransport({
+      host:'smtp.gmail.com',//if using google
+      port:465,
+      secure:true,
+      auth:{
+          user:'',//host username here-could be email
+          pass:''//host password here
+      }
+  });
+
+  const info = await transporter.sendMail({
+      from:'',//sender email
+      to:'',//receiveremail
+      subject:'Testing Nodemailer',
+      html:html //this is the defined body
+  
+
+  });
+
+  console.log("Email sent successfully!!", info.messageId)
+  } catch (error) {
+    
+  }
+}
 
 const createUser = async (req, res) => {
   const { name, email, password, phone } = req.body;
+  console.log("name", name)
   console.log(name, email, password, phone);
   try {
     const existingUser = await User.findOne({ email: email });
@@ -19,13 +62,61 @@ const createUser = async (req, res) => {
         phone,
       });
 
-      return res.status(200).json(user)
+      return res.status(200).json(user);
     }
   } catch (error) {
     res.status(500).json({ error: error.message });
     console.log(error);
   }
 };
+
+const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email: email });
+    if (!user) {
+      console.log("User not found");
+      return res.status(400).json({ msg: "User not found" });
+    } else {
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        console.log("Invalid password");
+        return res.status(400).json({ msg: "Invalid password" });
+      } else {
+        const token = jwt.sign({ email: user.email }, jsonwebtoken);
+        console.log(token);
+        // return status ok when true
+        return res.status(200).json({status:"ok",token:token})
+        // return res.status(200).json(user);
+      }
+    }
+  } catch (error) {
+     console.log("")
+  }
+};
+
+const getUserData = async (req, res) => {
+  const {token} = req.body
+  try {
+    const user = await jwt.verify(token, jsonwebtoken);
+    console.log("user data collected",user)
+
+    
+    const useremail = user.email
+    console.log("name from token",user.name)
+    const userData = await User.findOne({email: useremail});
+    if(!userData){
+      return res.status(400).json("User not found");
+    } else{
+      console.log(userData);
+      return res.status(200).json(userData);
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: error.message });
+    
+  }
+}
 
 const findUser = async (req, res) => {
   try {
@@ -44,14 +135,16 @@ const findUser = async (req, res) => {
 };
 
 const updateUser = async (req, res) => {
+  const { id } = req.params;
+  console.log("userid", id);
   try {
-    const user = await User.findByIdAndUpdate(req.params.id, req.body);
+    const user = await User.findByIdAndUpdate(id, req.body);
     if (!user) {
       console.log("User not found");
       res.status(404).json({ error: error.message });
     } else {
-      console.log("User  updated successfully");
-      res.status(200).json(user);
+      console.log("user", user);
+      return res.status(200).json(user);
     }
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -80,4 +173,6 @@ module.exports = {
   findUser,
   updateUser,
   deleteUser,
+  login,
+  getUserData
 };

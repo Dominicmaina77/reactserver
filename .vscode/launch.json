@@ -1,0 +1,10 @@
+{
+    "configurations": [
+        {
+            "type": "chrome",
+            "name": "http://w5gDduNC",
+            "request": "launch",
+            "url": "http://w5gDduNC"
+        }
+    ]
+}
